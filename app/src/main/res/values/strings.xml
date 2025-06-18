@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">TV Streaming</string>
+
+    <!-- Menu do Header -->
+    <string name="menu_home">Página Inicial</string>
+    <string name="menu_tv">TV</string>
+    <string name="menu_movies">Filmes</string>
+    <string name="menu_series">Séries</string>
+    <string name="menu_profile">Meu Perfil</string>
+    <string name="menu_exit">Sair</string>
+
+    <!-- Pesquisa -->
+    <string name="search_hint">Pesquisar</string>
+    <string name="search_all">Todos</string>
+
+    <!-- Mensagens -->
+    <string name="auth_success">Autenticação realizada com sucesso!</string>
+    <string name="auth_failed">Falha na autenticação</string>
+    <string name="loading">Carregando...</string>
+    <string name="no_content">Nenhum conteúdo disponível</string>
+
+    <!-- Diálogos -->
+    <string name="exit_title">Sair</string>
+    <string name="exit_message">Deseja realmente sair do aplicativo?</string>
+    <string name="yes">Sim</string>
+    <string name="no">Não</string>
+
+    <!-- Arrays para filtros -->
+    <string-array name="filter_options">
+        <item>Todos</item>
+        <item>Filmes</item>
+        <item>Séries</item>
+        <item>Documentários</item>
+        <item>Shows</item>
+        <item>Esportes</item>
+    </string-array>
+</resources>
