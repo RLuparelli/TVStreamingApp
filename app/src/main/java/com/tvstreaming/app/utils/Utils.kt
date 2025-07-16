@@ -3,6 +3,7 @@ package com.tvstreaming.app.utils
 import android.content.Context
 import android.content.SharedPreferences
 import android.net.ConnectivityManager
+import android.net.wifi.WifiManager
 import android.net.NetworkCapabilities
 import android.os.Build
 import android.widget.Toast
@@ -10,6 +11,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 import java.security.MessageDigest
 import java.net.NetworkInterface
+import android.text.TextUtils
 
 object AppUtils {
 
@@ -78,6 +80,7 @@ object AppUtils {
         } else {
             @Suppress("DEPRECATION")
             val networkInfo = connectivityManager.activeNetworkInfo
+            @Suppress("DEPRECATION")
             networkInfo?.isConnected == true
         }
     }
@@ -112,12 +115,23 @@ object AppUtils {
      */
     private fun generateDeviceBasedId(): String {
         val deviceInfo = getDeviceInfo()
+        val serialNumber = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            try {
+                Build.getSerial()
+            } catch (e: SecurityException) {
+                "unknown"
+            }
+        } else {
+            @Suppress("DEPRECATION")
+            Build.SERIAL
+        }
+        
         val uniqueString = "${deviceInfo["manufacturer"]}" +
                 "${deviceInfo["model"]}" +
                 "${deviceInfo["brand"]}" +
                 "${deviceInfo["board"]}" +
                 "${deviceInfo["device"]}" +
-                "${Build.SERIAL}".take(8)
+                "${serialNumber}".take(8)
 
         // Gerar hash e formatar como MAC
         val hash = generateMD5(uniqueString)
@@ -128,68 +142,76 @@ object AppUtils {
     }
 
     /**
-     * Obtém endereço MAC do dispositivo (versão melhorada)
+     * Obtém endereço MAC do dispositivo
      */
-    fun getMacAddress(): String {
+    fun getMacAddress(context: Context): String {
+        // Método 1: Usar WifiManager se conectado via Wi-Fi (com tratamento de API deprecada)
+        if (isWifiConnected(context)) {
+            val wifiManager = context.getSystemService(Context.WIFI_SERVICE) as WifiManager
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                // A partir do Android 6.0, o MAC address via WifiInfo retorna um valor genérico
+                // por questões de privacidade, então usamos outros métodos
+            } else {
+                @Suppress("DEPRECATION")
+                val wifiInfo = wifiManager.connectionInfo
+                if (wifiInfo != null) {
+                    @Suppress("DEPRECATION")
+                    val macAddress = wifiInfo.macAddress
+                if (!TextUtils.isEmpty(macAddress) && macAddress != "02:00:00:00:00:00") {
+                    return macAddress
+                }
+            }
+        }
+
+        // Método 2: Procurar por interfaces de rede comuns (wlan0, eth0)
         try {
             val networkInterfaces = NetworkInterface.getNetworkInterfaces()
-
-            // Método 1: Procurar por interface Wi-Fi ativa
             for (networkInterface in Collections.list(networkInterfaces)) {
-                if (networkInterface.name.equals("wlan0", ignoreCase = true) &&
-                    networkInterface.isUp &&
-                    !networkInterface.isLoopback &&
-                    networkInterface.hardwareAddress != null) {
-
+                if (networkInterface.name.equals("wlan0", ignoreCase = true) ||
+                    networkInterface.name.equals("eth0", ignoreCase = true)) {
                     val mac = networkInterface.hardwareAddress
-                    val macString = StringBuilder()
-                    for (b in mac) {
-                        macString.append(String.format("%02x:", b))
-                    }
-                    val result = macString.substring(0, macString.length - 1)
-                    if (result != "00:00:00:00:00:00") {
-                        return result
+                    if (mac != null) {
+                        val macString = mac.joinToString(separator = ":") { String.format("%02x", it) }
+                        if (macString != "00:00:00:00:00:00") {
+                            return macString
+                        }
                     }
                 }
             }
 
-            // Método 2: Procurar qualquer interface não-loopback
-            for (networkInterface in Collections.list(networkInterfaces)) {
-                if (!networkInterface.isLoopback &&
-                    networkInterface.isUp &&
-                    networkInterface.hardwareAddress != null) {
-
-                    val mac = networkInterface.hardwareAddress
-                    val macString = StringBuilder()
-                    for (b in mac) {
-                        macString.append(String.format("%02x:", b))
-                    }
-                    val result = macString.substring(0, macString.length - 1)
-                    if (result != "00:00:00:00:00:00") {
-                        return result
-                    }
-                }
-            }
-
-            // Método 3: Qualquer interface com hardware address
+            // Método 3: Qualquer interface com endereço de hardware
             for (networkInterface in Collections.list(networkInterfaces)) {
                 if (networkInterface.hardwareAddress != null) {
                     val mac = networkInterface.hardwareAddress
-                    val macString = StringBuilder()
-                    for (b in mac) {
-                        macString.append(String.format("%02x:", b))
-                    }
-                    val result = macString.substring(0, macString.length - 1)
-                    if (result != "00:00:00:00:00:00") {
-                        return result
+                    val macString = mac.joinToString(separator = ":") { String.format("%02x", it) }
+                    if (macString != "00:00:00:00:00:00") {
+                        return macString
                     }
                 }
             }
-
         } catch (e: Exception) {
             e.printStackTrace()
         }
-        return "00:00:00:00:00:00" // MAC padrão se não conseguir obter
+
+        // Método 4: Fallback para um MAC simulado
+        return generateSimulatedMac()
+    }
+
+    /**
+     * Verifica se o dispositivo está conectado via Wi-Fi
+     */
+    private fun isWifiConnected(context: Context): Boolean {
+        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val network = connectivityManager.activeNetwork ?: return false
+            val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
+            capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
+        } else {
+            @Suppress("DEPRECATION")
+            val networkInfo = connectivityManager.activeNetworkInfo
+            @Suppress("DEPRECATION")
+            networkInfo?.type == ConnectivityManager.TYPE_WIFI
+        }
     }
 
     /**

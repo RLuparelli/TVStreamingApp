@@ -30,8 +30,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun authenticateDevice() {
-        val macAddress = AppUtils.getMacAddress()
-
+        val macAddress = AppUtils.getMacAddress(this) // Passar o contexto
         Toast.makeText(this, "Autenticando dispositivo: $macAddress", Toast.LENGTH_LONG).show()
 
         lifecycleScope.launch {
