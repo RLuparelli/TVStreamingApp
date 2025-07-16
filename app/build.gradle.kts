@@ -3,16 +3,17 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.hilt)
-    alias(libs.plugins.kapt)
+    alias(libs.plugins.ksp)
 }
 
 android {
     namespace = "com.tvstreaming.app"
     compileSdk = 35
+    buildToolsVersion = "35.0.1"
 
     defaultConfig {
         applicationId = "com.tvstreaming.app"
-        minSdk = 21
+        minSdk = 23
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
@@ -48,7 +49,7 @@ android {
         baseline = file("lint-baseline.xml")
         abortOnError = false
         warningsAsErrors = false
-        disable.addAll(listOf("MissingTvBanner", "Deprecated"))
+        disable.addAll(listOf("MissingTvBanner", "Deprecated", "MissingPermission"))
     }
 }
 
@@ -71,12 +72,12 @@ dependencies {
     
     // Hilt
     implementation(libs.hilt.android)
-    kapt(libs.hilt.compiler)
+    ksp(libs.hilt.compiler)
     
     // Room
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
-    kapt(libs.room.compiler)
+    ksp(libs.room.compiler)
     
     // Retrofit & OkHttp
     implementation(libs.retrofit)

@@ -157,8 +157,9 @@ object AppUtils {
                 if (wifiInfo != null) {
                     @Suppress("DEPRECATION")
                     val macAddress = wifiInfo.macAddress
-                if (!TextUtils.isEmpty(macAddress) && macAddress != "02:00:00:00:00:00") {
-                    return macAddress
+                    if (!TextUtils.isEmpty(macAddress) && macAddress != "02:00:00:00:00:00") {
+                        return macAddress
+                    }
                 }
             }
         }
