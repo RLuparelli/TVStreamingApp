@@ -2,6 +2,7 @@ package com.tvstreaming.app
 
 import android.app.Application
 import dagger.hilt.android.HiltAndroidApp
+import timber.log.Timber
 
 @HiltAndroidApp
 class TVStreamingApplication : Application() {
@@ -14,7 +15,10 @@ class TVStreamingApplication : Application() {
     }
     
     private fun initializeApp() {
-        // TODO: Add any initialization logic here
-        // For example: crash reporting, analytics, etc.
+        // Initialize Timber for logging
+        if (BuildConfig.DEBUG) {
+            Timber.plant(Timber.DebugTree())
+            Timber.d("TVStreamingApplication: Timber initialized")
+        }
     }
 }

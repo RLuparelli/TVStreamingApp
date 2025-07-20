@@ -8,7 +8,9 @@ data class AuthResponse(
     @SerializedName("user_info")
     val userInfo: UserInfo,
     @SerializedName("server_info")
-    val serverInfo: ServerInfo
+    val serverInfo: ServerInfo,
+    @SerializedName("token")
+    val token: String = ""
 )
 
 // Informações do usuário

@@ -1,7 +1,13 @@
 package com.tvstreaming.app.core.auth
 
 import com.tvstreaming.app.core.api.ApiService
+import com.tvstreaming.app.core.storage.preferences.SecurePreferences
+import com.tvstreaming.app.core.utils.Resource
+import com.tvstreaming.app.core.utils.safeApiCall
+import com.tvstreaming.app.core.utils.safeCall
 import com.tvstreaming.app.models.AuthResponse
+import com.tvstreaming.app.core.api.CodeAuthRequest
+import com.tvstreaming.app.core.api.DeviceAuthRequest
 import com.tvstreaming.app.models.UserInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -9,12 +15,14 @@ import java.text.SimpleDateFormat
 import java.util.*
 import javax.inject.Inject
 import javax.inject.Singleton
+import timber.log.Timber
 
 @Singleton
 class AuthRepository @Inject constructor(
     private val apiService: ApiService,
     private val macAddressManager: MacAddressManager,
-    private val ownerConfigParser: OwnerConfigParser
+    private val ownerConfigParser: OwnerConfigParser,
+    private val securePreferences: SecurePreferences
 ) {
 
     /**
@@ -31,9 +39,9 @@ class AuthRepository @Inject constructor(
     }
 
     /**
-     * Autentica usando código de acesso
+     * Autentica usando código de acesso (mock)
      */
-    suspend fun authenticateWithCode(code: String): Result<AuthResponse> = withContext(Dispatchers.IO) {
+    suspend fun authenticateWithCodeMock(code: String): Result<AuthResponse> = withContext(Dispatchers.IO) {
         try {
             // TODO: Implementar autenticação real com código
             val macAddress = macAddressManager.getMacAddress()
@@ -94,6 +102,81 @@ class AuthRepository @Inject constructor(
         val ownerConfig = ownerConfigParser.getDefaultConfig().copy(tenantId = ownerId)
         val serverInfo = ownerConfigParser.toServerInfo(ownerConfig)
 
-        return AuthResponse(userInfo, serverInfo)
+        return AuthResponse(userInfo, serverInfo, "mock_token_${System.currentTimeMillis()}")
+    }
+    
+    /**
+     * Autentica o dispositivo usando a API
+     */
+    suspend fun authenticateDevice(): Resource<AuthResponse> {
+        val deviceId = macAddressManager.getMacAddress()
+        return safeCall {
+            apiService.authenticateDevice(
+                DeviceAuthRequest(
+                    macAddress = deviceId,
+                    deviceInfo = mapOf(
+                        "deviceType" to if (securePreferences.isTV()) "android_tv" else "android_mobile",
+                        "platform" to "android",
+                        "appVersion" to "1.0.0" // TODO: Get from BuildConfig
+                    ),
+                    tenantId = null
+                )
+            )
+        }.also { result ->
+            if (result is Resource.Success) {
+                result.data?.let { response ->
+                    // Save token on successful authentication
+                    securePreferences.saveToken(response.token)
+                }
+            }
+        }
+    }
+    
+    /**
+     * Autentica usando código
+     */
+    suspend fun authenticateWithCode(code: String): Resource<AuthResponse> {
+        // For testing without server, use mock code "1234"
+        if (code == "1234") {
+            val mockResponse = generateMockAccess(
+                macAddressManager.getMacAddress(),
+                "test-tenant"
+            )
+            securePreferences.saveToken(mockResponse.token)
+            return Resource.Success(mockResponse)
+        }
+        
+        // Real API call
+        val deviceId = macAddressManager.getMacAddress()
+        return safeCall {
+            apiService.authenticateCode(
+                CodeAuthRequest(
+                    code = code,
+                    deviceInfo = mapOf(
+                        "deviceId" to deviceId,
+                        "platform" to "android"
+                    )
+                )
+            )
+        }.also { result ->
+            if (result is Resource.Success) {
+                result.data?.let { response ->
+                    // Save token on successful authentication
+                    securePreferences.saveToken(response.token)
+                }
+            }
+        }
+    }
+    
+    /**
+     * Verifica se está autenticado
+     */
+    fun isAuthenticated(): Boolean {
+        return try {
+            securePreferences.getAuthToken() != null
+        } catch (e: Exception) {
+            Timber.e(e, "Error checking authentication status")
+            false
+        }
     }
 }

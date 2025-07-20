@@ -110,7 +110,7 @@ echo "sdk.dir=/path/to/Android/Sdk" > local.properties
 
 ```bash
 # 1. Navegar para o diretório do servidor
-cd mock-api-server
+
 
 # 2. Instalar dependências
 npm install

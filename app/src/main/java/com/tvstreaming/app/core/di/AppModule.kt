@@ -2,6 +2,7 @@ package com.tvstreaming.app.core.di
 
 import android.content.Context
 import com.google.gson.Gson
+import com.tvstreaming.app.core.api.ApiService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -18,4 +19,5 @@ object AppModule {
     fun provideContext(@ApplicationContext context: Context): Context {
         return context
     }
+    
 }

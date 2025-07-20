@@ -7,32 +7,31 @@ import retrofit2.http.*
 interface ApiService {
     
     // Autenticação
-    @POST("/auth/device")
-    suspend fun authenticateDevice(@Body request: DeviceAuthRequest): Response<AuthResponse>
+    @POST("auth/device")
+    suspend fun authenticateDevice(@Body request: DeviceAuthRequest): AuthResponse
     
-    @POST("/auth/code")
-    suspend fun authenticateCode(@Body request: CodeAuthRequest): Response<AuthResponse>
+    @POST("auth/code")
+    suspend fun authenticateCode(@Body request: CodeAuthRequest): AuthResponse
     
-    @POST("/auth/refresh")
+    @POST("auth/refresh")
     suspend fun refreshToken(@Body request: RefreshTokenRequest): Response<AuthResponse>
     
     // Conteúdo
-    @GET("/content/categories")
-    suspend fun getCategories(@Header("Authorization") token: String): Response<List<Category>>
+    @GET("content/categories")
+    suspend fun getCategories(): List<Category>
     
-    @GET("/content/{categoryId}")
-    suspend fun getContentByCategory(
+    @GET("content/{categoryId}")
+    suspend fun getCategoryContent(
         @Path("categoryId") categoryId: String,
-        @Header("Authorization") token: String
-    ): Response<List<ContentItem>>
+        @Query("page") page: Int = 1
+    ): ContentListResponse
     
-    @GET("/content/details/{contentId}")
+    @GET("content/details/{contentId}")
     suspend fun getContentDetails(
-        @Path("contentId") contentId: String,
-        @Header("Authorization") token: String
-    ): Response<ContentDetails>
+        @Path("contentId") contentId: String
+    ): ContentDetails
     
-    @GET("/content/search")
+    @GET("content/search")
     suspend fun searchContent(
         @Query("q") query: String,
         @Query("category") category: String? = null,
@@ -40,33 +39,50 @@ interface ApiService {
     ): Response<List<ContentItem>>
     
     // Usuário
-    @GET("/user/profile")
+    @GET("user/profile")
     suspend fun getUserProfile(@Header("Authorization") token: String): Response<UserInfo>
     
-    @POST("/user/watch-progress")
+    @POST("user/watch-progress")
     suspend fun updateWatchProgress(
         @Body request: WatchProgressRequest,
         @Header("Authorization") token: String
     ): Response<Unit>
     
-    @GET("/user/watch-progress/{contentId}")
+    @GET("user/watch-progress/{contentId}")
     suspend fun getWatchProgress(
         @Path("contentId") contentId: String,
         @Header("Authorization") token: String
     ): Response<WatchProgressResponse>
     
     // Pagamento
-    @POST("/payment/generate-qr")
+    @POST("payment/generate-qr")
     suspend fun generatePaymentQr(
         @Body request: PaymentQrRequest,
         @Header("Authorization") token: String
     ): Response<PaymentQrResponse>
     
-    @GET("/payment/status/{paymentId}")
+    @GET("payment/status/{paymentId}")
     suspend fun getPaymentStatus(
         @Path("paymentId") paymentId: String,
         @Header("Authorization") token: String
     ): Response<PaymentStatusResponse>
+    
+    // Canais de TV
+    @GET("channels/categories")
+    suspend fun getChannelCategories(): Response<ChannelCategoriesResponse>
+    
+    @GET("channels")
+    suspend fun getChannels(
+        @Query("category") category: String? = null,
+        @Query("search") search: String? = null,
+        @Query("page") page: Int = 1,
+        @Query("limit") limit: Int = 20
+    ): Response<ChannelListResponse>
+    
+    @GET("channels/{channelId}")
+    suspend fun getChannelDetails(
+        @Path("channelId") channelId: String
+    ): Response<ChannelDetails>
 }
 
 // Request/Response models
@@ -115,4 +131,8 @@ data class PaymentStatusResponse(
     val paymentId: String,
     val status: String, // "pending", "completed", "failed", "expired"
     val completedAt: Long?
+)
+
+data class ChannelCategoriesResponse(
+    val categories: List<ChannelCategory>
 )

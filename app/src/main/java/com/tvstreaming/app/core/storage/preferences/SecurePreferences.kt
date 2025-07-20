@@ -153,4 +153,13 @@ class SecurePreferences @Inject constructor(
     fun isLoggedIn(): Boolean {
         return getCredentials() != null && getToken() != null
     }
+    
+    // Get auth token (alias for getToken for compatibility)
+    fun getAuthToken(): String? = getToken()
+    
+    // Check if device is TV
+    fun isTV(): Boolean {
+        return context.packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_LEANBACK) ||
+               context.packageManager.hasSystemFeature("android.hardware.type.television")
+    }
 }

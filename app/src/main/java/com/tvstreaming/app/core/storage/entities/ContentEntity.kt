@@ -54,31 +54,6 @@ data class ContentEntity(
     }
 }
 
-@Entity(tableName = "categories")
-data class CategoryEntity(
-    @PrimaryKey val id: String,
-    val name: String,
-    val parentId: Int,
-    val cachedAt: Long = System.currentTimeMillis()
-) {
-    fun toCategory(): com.tvstreaming.app.models.Category {
-        return com.tvstreaming.app.models.Category(
-            categoryId = id,
-            categoryName = name,
-            parentId = parentId
-        )
-    }
-    
-    companion object {
-        fun fromCategory(category: com.tvstreaming.app.models.Category): CategoryEntity {
-            return CategoryEntity(
-                id = category.categoryId,
-                name = category.categoryName,
-                parentId = category.parentId
-            )
-        }
-    }
-}
 
 @Entity(tableName = "watch_progress")
 data class WatchProgressEntity(
