@@ -4,6 +4,7 @@ import com.tvstreaming.app.core.api.ApiService
 import com.tvstreaming.app.core.utils.Resource
 import com.tvstreaming.app.core.utils.safeApiCall
 import com.tvstreaming.app.models.*
+import com.tvstreaming.app.core.config.CategoryConfig
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
@@ -22,11 +23,9 @@ class MediaRepository @Inject constructor(
         emit(Resource.Loading())
         
         // Por enquanto usando dados mockados, mas estruturado para futura integração com API
-        val categories = when (mediaType) {
-            MediaType.MOVIE -> getMovieCategories()
-            MediaType.SERIES -> getSeriesCategories()
-            MediaType.ANIMATION -> getAnimationCategories()
-            MediaType.LIVE -> getChannelCategories()
+        val categoryInfos = CategoryConfig.getCategoriesForType(mediaType)
+        val categories = categoryInfos.map { info ->
+            ChannelCategory(info.id, info.name, info.description)
         }
         
         emit(Resource.Success(categories))
@@ -73,14 +72,8 @@ class MediaRepository @Inject constructor(
     fun getAllContentByCategories(mediaType: MediaType): Flow<Resource<Map<String, List<MediaContent>>>> = flow {
         emit(Resource.Loading())
         
-        val categories = when (mediaType) {
-            MediaType.MOVIE -> listOf("action", "comedy", "drama", "horror", "romance", "scifi")
-            MediaType.SERIES -> listOf("action", "comedy", "drama", "reality", "documentary", "anime")
-            MediaType.ANIMATION -> listOf("kids", "family", "educational", "adventure", "comedy", "fantasy")
-            MediaType.LIVE -> emptyList()
-        }
-        
-        val categoryNames = getCategoryNameMap(mediaType)
+        val categoryInfos = CategoryConfig.getCategoriesForType(mediaType)
+        val categories = categoryInfos.map { it.id }
         val contentMap = mutableMapOf<String, List<MediaContent>>()
         
         categories.forEach { categoryId ->
@@ -92,7 +85,7 @@ class MediaRepository @Inject constructor(
             }
             
             if (content.isNotEmpty()) {
-                val categoryName = categoryNames[categoryId] ?: categoryId
+                val categoryName = CategoryConfig.getCategoryName(mediaType, categoryId)
                 contentMap[categoryName] = content
             }
         }
@@ -101,72 +94,6 @@ class MediaRepository @Inject constructor(
     }
     
     // Dados mockados - futuramente serão substituídos por chamadas reais à API
-    
-    private fun getMovieCategories(): List<ChannelCategory> = listOf(
-        ChannelCategory("action", "Ação", "Filmes de ação e aventura"),
-        ChannelCategory("comedy", "Comédia", "Filmes para dar risadas"),
-        ChannelCategory("drama", "Drama", "Histórias emocionantes"),
-        ChannelCategory("horror", "Terror", "Filmes assustadores"),
-        ChannelCategory("romance", "Romance", "Histórias de amor"),
-        ChannelCategory("scifi", "Ficção Científica", "Filmes futuristas")
-    )
-    
-    private fun getSeriesCategories(): List<ChannelCategory> = listOf(
-        ChannelCategory("action", "Ação", "Séries de ação e aventura"),
-        ChannelCategory("comedy", "Comédia", "Séries de humor"),
-        ChannelCategory("drama", "Drama", "Séries dramáticas"),
-        ChannelCategory("reality", "Reality", "Reality shows"),
-        ChannelCategory("documentary", "Documentário", "Séries documentais"),
-        ChannelCategory("anime", "Anime", "Animações japonesas")
-    )
-    
-    private fun getAnimationCategories(): List<ChannelCategory> = listOf(
-        ChannelCategory("kids", "Infantil", "Para crianças pequenas"),
-        ChannelCategory("family", "Família", "Para toda a família"),
-        ChannelCategory("educational", "Educativo", "Conteúdo educacional"),
-        ChannelCategory("adventure", "Aventura", "Desenhos de aventura"),
-        ChannelCategory("comedy", "Comédia", "Desenhos engraçados"),
-        ChannelCategory("fantasy", "Fantasia", "Mundos mágicos")
-    )
-    
-    private fun getChannelCategories(): List<ChannelCategory> = listOf(
-        ChannelCategory("news", "Notícias", "Canais de notícias"),
-        ChannelCategory("sports", "Esportes", "Canais esportivos"),
-        ChannelCategory("entertainment", "Entretenimento", "Variedades"),
-        ChannelCategory("documentary", "Documentários", "Canais educativos"),
-        ChannelCategory("kids", "Infantil", "Canais infantis"),
-        ChannelCategory("movies", "Filmes", "Canais de filmes")
-    )
-    
-    private fun getCategoryNameMap(mediaType: MediaType): Map<String, String> = when (mediaType) {
-        MediaType.MOVIE, MediaType.SERIES -> mapOf(
-            "action" to "Ação",
-            "comedy" to "Comédia",
-            "drama" to "Drama",
-            "horror" to "Terror",
-            "romance" to "Romance",
-            "scifi" to "Ficção Científica",
-            "reality" to "Reality",
-            "documentary" to "Documentário",
-            "anime" to "Anime"
-        )
-        MediaType.ANIMATION -> mapOf(
-            "kids" to "Infantil",
-            "family" to "Família",
-            "educational" to "Educativo",
-            "adventure" to "Aventura",
-            "comedy" to "Comédia",
-            "fantasy" to "Fantasia"
-        )
-        MediaType.LIVE -> mapOf(
-            "news" to "Notícias",
-            "sports" to "Esportes",
-            "entertainment" to "Entretenimento",
-            "documentary" to "Documentários",
-            "kids" to "Infantil",
-            "movies" to "Filmes"
-        )
-    }
     
     private fun getFeaturedMovie(): MediaContent = MediaContentImpl(
         id = "movie_featured",
@@ -210,10 +137,11 @@ class MediaRepository @Inject constructor(
     
     private fun getMoviesByCategory(categoryId: String): List<MediaContent> {
         // Dados mockados por categoria
+        val categoryName = CategoryConfig.getCategoryName(MediaType.MOVIE, categoryId)
         val baseMovies = listOf(
             MediaContentImpl(
                 id = "movie_${categoryId}_1",
-                title = "Filme de ${getCategoryNameMap(MediaType.MOVIE)[categoryId]} 1",
+                title = "Filme de $categoryName 1",
                 description = "Descrição do filme",
                 posterUrl = "https://picsum.photos/300/450?random=${categoryId}1",
                 streamUrl = "https://example.com/movie1.mp4",
@@ -224,7 +152,7 @@ class MediaRepository @Inject constructor(
             ),
             MediaContentImpl(
                 id = "movie_${categoryId}_2",
-                title = "Filme de ${getCategoryNameMap(MediaType.MOVIE)[categoryId]} 2",
+                title = "Filme de $categoryName 2",
                 description = "Descrição do filme",
                 posterUrl = "https://picsum.photos/300/450?random=${categoryId}2",
                 streamUrl = "https://example.com/movie2.mp4",
@@ -239,10 +167,11 @@ class MediaRepository @Inject constructor(
     }
     
     private fun getSeriesByCategory(categoryId: String): List<MediaContent> {
+        val categoryName = CategoryConfig.getCategoryName(MediaType.SERIES, categoryId)
         val baseSeries = listOf(
             MediaContentImpl(
                 id = "series_${categoryId}_1",
-                title = "Série de ${getCategoryNameMap(MediaType.SERIES)[categoryId]} 1",
+                title = "Série de $categoryName 1",
                 description = "Descrição da série",
                 posterUrl = "https://picsum.photos/300/450?random=series${categoryId}1",
                 streamUrl = "https://example.com/series1.mp4",
@@ -254,7 +183,7 @@ class MediaRepository @Inject constructor(
             ),
             MediaContentImpl(
                 id = "series_${categoryId}_2",
-                title = "Série de ${getCategoryNameMap(MediaType.SERIES)[categoryId]} 2",
+                title = "Série de $categoryName 2",
                 description = "Descrição da série",
                 posterUrl = "https://picsum.photos/300/450?random=series${categoryId}2",
                 streamUrl = "https://example.com/series2.mp4",
@@ -270,10 +199,11 @@ class MediaRepository @Inject constructor(
     }
     
     private fun getAnimationsByCategory(categoryId: String): List<MediaContent> {
+        val categoryName = CategoryConfig.getCategoryName(MediaType.ANIMATION, categoryId)
         val baseAnimations = listOf(
             MediaContentImpl(
                 id = "animation_${categoryId}_1",
-                title = "Desenho de ${getCategoryNameMap(MediaType.ANIMATION)[categoryId]} 1",
+                title = "Desenho de $categoryName 1",
                 description = "Descrição do desenho",
                 posterUrl = "https://picsum.photos/300/450?random=anim${categoryId}1",
                 streamUrl = "https://example.com/animation1.mp4",
@@ -284,7 +214,7 @@ class MediaRepository @Inject constructor(
             ),
             MediaContentImpl(
                 id = "animation_${categoryId}_2",
-                title = "Desenho de ${getCategoryNameMap(MediaType.ANIMATION)[categoryId]} 2",
+                title = "Desenho de $categoryName 2",
                 description = "Descrição do desenho",
                 posterUrl = "https://picsum.photos/300/450?random=anim${categoryId}2",
                 streamUrl = "https://example.com/animation2.mp4",

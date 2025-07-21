@@ -17,7 +17,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.tvstreaming.app.ui.components.LoadingScreen
+import com.tvstreaming.app.ui.components.common.LoadingScreen
 import com.tvstreaming.app.ui.theme.isTelevision
 
 @OptIn(ExperimentalComposeUiApi::class)

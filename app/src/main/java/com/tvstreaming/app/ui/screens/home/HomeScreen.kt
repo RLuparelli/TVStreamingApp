@@ -23,8 +23,12 @@ import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import com.tvstreaming.app.ui.components.*
-import com.tvstreaming.app.ui.screens.home.components.CategoryRow
+import com.tvstreaming.app.ui.components.content.ContentCategoryRow
+import com.tvstreaming.app.ui.components.category.*
+import com.tvstreaming.app.ui.components.common.LoadingScreen
+import com.tvstreaming.app.ui.components.common.ErrorScreen
 import com.tvstreaming.app.ui.theme.isTelevision
+import com.tvstreaming.app.models.ContentAdapter.toMediaContent
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
@@ -173,7 +177,7 @@ private fun HomeContent(
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
                 
-                val categories = getDefaultCategories()
+                val categories = CategoryDefaults.getDefaultCategories()
                 
                 if (isTV) {
                     // TV Layout - Horizontal scrolling with focus
@@ -247,11 +251,10 @@ private fun HomeContent(
                     Column(
                         modifier = Modifier.animateContentSize()
                     ) {
-                        CategoryRow(
-                            title = "Continue Assistindo",
-                            contents = contents,
-                            onContentClick = onContentClick,
-                            isTV = isTV
+                        ContentCategoryRow(
+                            categoryName = "Continue Assistindo",
+                            contents = contents.map { it.toMediaContent() },
+                            onContentClick = onContentClick
                         )
                     }
                 }
@@ -276,11 +279,10 @@ private fun HomeContent(
             }
             
             items(state.categories) { category ->
-                CategoryRow(
-                    title = category.categoryName,
+                ContentCategoryRow(
+                    categoryName = category.categoryName,
                     contents = emptyList(), // Contents will be loaded on demand
-                    onContentClick = onContentClick,
-                    isTV = isTV
+                    onContentClick = onContentClick
                 )
             }
         }

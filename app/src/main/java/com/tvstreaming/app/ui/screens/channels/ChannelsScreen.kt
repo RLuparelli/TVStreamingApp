@@ -27,6 +27,15 @@ fun ChannelsScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val configuration = LocalConfiguration.current
     val isTV = configuration.isTelevision()
+    val isLandscape = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
+    val screenWidthDp = configuration.screenWidthDp
+    val isCompact = screenWidthDp < 600
+    
+    // Determinar se deve usar layout em duas colunas
+    val useTwoColumnLayout = isTV || (isLandscape && !isCompact)
+    
+    // Estado para controlar o dialog do player no mobile
+    var showPlayerDialog by remember { mutableStateOf(false) }
     
     Box(
         modifier = Modifier
@@ -87,105 +96,130 @@ fun ChannelsScreen(
                     .padding(horizontal = 16.dp, vertical = 0.dp)
             )
             
-            // Main Content Area
-            Row(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp)
-            ) {
-                // Left Side: Channels List with Search
-                Box(
+            // Main Content Area - Responsive Layout
+            if (useTwoColumnLayout) {
+                // Layout em duas colunas para TV e tablets em paisagem
+                Row(
                     modifier = Modifier
-                        .weight(0.35f)
-                        .fillMaxHeight()
-                        .padding(end = 8.dp)
+                        .fillMaxSize()
+                        .padding(16.dp)
                 ) {
-                    ChannelsList(
-                        channels = uiState.filteredChannels,
-                        selectedChannel = uiState.selectedChannel,
-                        searchQuery = uiState.searchQuery,
-                        onChannelSelected = viewModel::selectChannel,
-                        onSearchQueryChanged = viewModel::updateSearchQuery,
-                        onFavoriteToggle = viewModel::toggleFavorite,
-                        onLoadMore = viewModel::loadMoreChannels,
-                        isLoading = uiState.isLoading,
-                        error = uiState.error,
-                        onRetry = viewModel::retry
-                    )
-                }
-                
-                // Right Side: Player and Details
-                Column(
-                    modifier = Modifier
-                        .weight(0.65f)
-                        .fillMaxHeight()
-                        .padding(start = 8.dp)
-                ) {
-                    // Video Player Preview (Upper Right)
-                    Card(
+                    // Left Side: Channels List with Search
+                    Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(0.6f),
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color.Black.copy(alpha = 0.7f)
-                        )
+                            .weight(0.35f)
+                            .fillMaxHeight()
+                            .padding(end = 8.dp)
                     ) {
-                        val selectedChannel = uiState.selectedChannel
-                        if (selectedChannel != null) {
-                            VideoPlayer(
-                                channel = selectedChannel,
-                                modifier = Modifier.fillMaxSize()
+                        ChannelsList(
+                            channels = uiState.filteredChannels,
+                            selectedChannel = uiState.selectedChannel,
+                            searchQuery = uiState.searchQuery,
+                            onChannelSelected = viewModel::selectChannel,
+                            onSearchQueryChanged = viewModel::updateSearchQuery,
+                            onFavoriteToggle = viewModel::toggleFavorite,
+                            onLoadMore = viewModel::loadMoreChannels,
+                            isLoading = uiState.isLoading,
+                            error = uiState.error,
+                            onRetry = viewModel::retry
+                        )
+                    }
+                    
+                    // Right Side: Player and Details
+                    Column(
+                        modifier = Modifier
+                            .weight(0.65f)
+                            .fillMaxHeight()
+                            .padding(start = 8.dp)
+                    ) {
+                        // Video Player Preview (Upper Right)
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(0.6f),
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color.Black.copy(alpha = 0.7f)
                             )
-                        } else {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = "Selecione um canal",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = Color.White.copy(alpha = 0.6f)
+                        ) {
+                            val selectedChannel = uiState.selectedChannel
+                            if (selectedChannel != null) {
+                                VideoPlayer(
+                                    channel = selectedChannel,
+                                    modifier = Modifier.fillMaxSize()
                                 )
+                            } else {
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "Selecione um canal",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = Color.White.copy(alpha = 0.6f)
+                                    )
+                                }
+                            }
+                        }
+                        
+                        Spacer(modifier = Modifier.height(16.dp))
+                        
+                        // Channel Details (Lower Right)
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(0.4f),
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color.Black.copy(alpha = 0.7f)
+                            )
+                        ) {
+                            val selectedChannel = uiState.selectedChannel
+                            if (selectedChannel != null) {
+                                ChannelDetails(
+                                    channel = selectedChannel,
+                                    channelDetails = uiState.selectedChannelDetails,
+                                    isLoading = uiState.detailsLoading,
+                                    error = uiState.detailsError,
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(16.dp)
+                                )
+                            } else {
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "Nenhum canal selecionado",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = Color.White.copy(alpha = 0.6f)
+                                    )
+                                }
                             }
                         }
                     }
-                    
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    // Channel Details (Lower Right)
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(0.4f),
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color.Black.copy(alpha = 0.7f)
-                        )
-                    ) {
-                        val selectedChannel = uiState.selectedChannel
-                        if (selectedChannel != null) {
-                            ChannelDetails(
-                                channel = selectedChannel,
-                                channelDetails = uiState.selectedChannelDetails,
-                                isLoading = uiState.detailsLoading,
-                                error = uiState.detailsError,
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(16.dp)
-                            )
-                        } else {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = "Nenhum canal selecionado",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = Color.White.copy(alpha = 0.6f)
-                                )
-                            }
-                        }
-                    }
                 }
+            } else {
+                // Layout em lista para celulares em retrato
+                ChannelsListMobile(
+                    channels = uiState.filteredChannels,
+                    selectedChannel = uiState.selectedChannel,
+                    searchQuery = uiState.searchQuery,
+                    onChannelSelected = { channel ->
+                        viewModel.selectChannel(channel)
+                        if (!useTwoColumnLayout) {
+                            showPlayerDialog = true
+                        }
+                    },
+                    onSearchQueryChanged = viewModel::updateSearchQuery,
+                    onFavoriteToggle = viewModel::toggleFavorite,
+                    onLoadMore = viewModel::loadMoreChannels,
+                    isLoading = uiState.isLoading,
+                    error = uiState.error,
+                    onRetry = viewModel::retry,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp)
+                )
             }
         }
         
@@ -249,6 +283,15 @@ fun ChannelsScreen(
                     }
                 }
             }
+        }
+        
+        // Player Dialog para mobile
+        if (showPlayerDialog && uiState.selectedChannel != null && !useTwoColumnLayout) {
+            ChannelPlayerDialog(
+                channel = uiState.selectedChannel!!,
+                channelDetails = uiState.selectedChannelDetails,
+                onDismiss = { showPlayerDialog = false }
+            )
         }
     }
 }

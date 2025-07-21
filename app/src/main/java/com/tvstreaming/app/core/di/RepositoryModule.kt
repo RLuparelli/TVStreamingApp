@@ -24,34 +24,10 @@ object RepositoryModule {
     
     @Provides
     @Singleton
-    fun provideMoviesRepository(
-        apiService: ApiService
-    ): MoviesRepository {
-        return MoviesRepository(apiService)
-    }
-    
-    @Provides
-    @Singleton
-    fun provideSeriesRepository(
-        apiService: ApiService
-    ): SeriesRepository {
-        return SeriesRepository(apiService)
-    }
-    
-    @Provides
-    @Singleton
     fun provideChannelRepository(
         apiService: ApiService
     ): ChannelRepository {
         return ChannelRepository(apiService)
-    }
-    
-    @Provides
-    @Singleton
-    fun provideAnimationRepository(
-        apiService: ApiService
-    ): AnimationRepository {
-        return AnimationRepository(apiService)
     }
     
     @Provides
