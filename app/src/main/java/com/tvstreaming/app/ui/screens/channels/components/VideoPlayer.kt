@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -179,10 +180,10 @@ fun VideoPlayer(
                         ) {
                             Icon(
                                 imageVector = when {
-                                    isMuted -> Icons.Default.VolumeOff
-                                    volume > 0.5f -> Icons.Default.VolumeUp
-                                    volume > 0f -> Icons.Default.VolumeDown
-                                    else -> Icons.Default.VolumeMute
+                                    isMuted -> Icons.AutoMirrored.Filled.VolumeOff
+                                    volume > 0.5f -> Icons.AutoMirrored.Filled.VolumeUp
+                                    volume > 0f -> Icons.AutoMirrored.Filled.VolumeDown
+                                    else -> Icons.AutoMirrored.Filled.VolumeMute
                                 },
                                 contentDescription = "Volume",
                                 tint = Color.White

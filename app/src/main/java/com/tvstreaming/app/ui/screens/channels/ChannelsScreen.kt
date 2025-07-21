@@ -3,7 +3,7 @@ package com.tvstreaming.app.ui.screens.channels
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -13,8 +13,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.ui.platform.LocalConfiguration
 import com.tvstreaming.app.ui.components.AnimatedSpaceBackground
 import com.tvstreaming.app.ui.screens.channels.components.*
+import com.tvstreaming.app.ui.theme.isTelevision
 
 @Composable
 fun ChannelsScreen(
@@ -22,9 +25,13 @@ fun ChannelsScreen(
     viewModel: ChannelsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val configuration = LocalConfiguration.current
+    val isTV = configuration.isTelevision()
     
     Box(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .fillMaxSize()
+            .then(if (!isTV) Modifier.safeDrawingPadding() else Modifier)
     ) {
         // Background
         AnimatedSpaceBackground()
@@ -52,7 +59,7 @@ fun ChannelsScreen(
                         )
                 ) {
                     Icon(
-                        imageVector = Icons.Default.ArrowBack,
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Voltar",
                         tint = Color.White,
                         modifier = Modifier.size(24.dp)

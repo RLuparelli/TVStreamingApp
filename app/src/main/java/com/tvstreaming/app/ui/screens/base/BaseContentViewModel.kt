@@ -2,6 +2,7 @@ package com.tvstreaming.app.ui.screens.base
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.tvstreaming.app.core.repositories.MediaRepository
 import com.tvstreaming.app.core.utils.Resource
 import com.tvstreaming.app.models.ChannelCategory
 import com.tvstreaming.app.models.MediaContent
@@ -11,9 +12,11 @@ import kotlinx.coroutines.launch
 
 /**
  * ViewModel base abstrato para todas as telas de conteúdo
- * Seguindo Open/Closed Principle e DRY
+ * Refatorado para eliminar duplicação de código
  */
-abstract class BaseContentViewModel : ViewModel() {
+abstract class BaseContentViewModel(
+    protected val mediaRepository: MediaRepository
+) : ViewModel() {
     
     private val _uiState = MutableStateFlow(ContentUiState())
     val uiState: StateFlow<ContentUiState> = _uiState.asStateFlow()
@@ -28,34 +31,17 @@ abstract class BaseContentViewModel : ViewModel() {
      */
     abstract val screenTitle: String
     
-    // Remove init block to avoid initialization issues
-    
     /**
-     * Call this method from the child ViewModels after all dependencies are injected
+     * Inicializa o ViewModel após injeção de dependências
      */
     protected fun initializeViewModel() {
         loadCategories()
         loadContent()
     }
     
-    /**
-     * Carrega categorias específicas do tipo de conteúdo
-     */
-    protected abstract suspend fun fetchCategories(): Flow<Resource<List<ChannelCategory>>>
-    
-    /**
-     * Carrega conteúdo em destaque
-     */
-    protected abstract suspend fun fetchFeaturedContent(): Flow<Resource<MediaContent?>>
-    
-    /**
-     * Carrega conteúdo por categoria
-     */
-    protected abstract suspend fun fetchContentByCategory(categoryId: String?): Flow<Resource<Map<String, List<MediaContent>>>>
-    
     private fun loadCategories() {
         viewModelScope.launch {
-            fetchCategories().collect { result ->
+            mediaRepository.getCategories(mediaType).collect { result ->
                 when (result) {
                     is Resource.Success -> {
                         _uiState.update { state ->
@@ -89,7 +75,7 @@ abstract class BaseContentViewModel : ViewModel() {
             
             // Carrega conteúdo em destaque
             launch {
-                fetchFeaturedContent().collect { result ->
+                mediaRepository.getFeaturedContent(mediaType).collect { result ->
                     when (result) {
                         is Resource.Success -> {
                             _uiState.update { state ->
@@ -105,28 +91,61 @@ abstract class BaseContentViewModel : ViewModel() {
             launch {
                 val categoryId = _uiState.value.selectedCategory?.id
                 
-                fetchContentByCategory(categoryId).collect { result ->
-                    when (result) {
-                        is Resource.Success -> {
-                            _uiState.update { state ->
-                                state.copy(
-                                    contentByCategory = result.data ?: emptyMap(),
-                                    isLoading = false,
-                                    error = null
-                                )
+                if (categoryId != null) {
+                    // Carrega categoria específica
+                    mediaRepository.getContentByCategory(mediaType, categoryId).collect { result ->
+                        when (result) {
+                            is Resource.Success -> {
+                                val categoryName = _uiState.value.selectedCategory?.name ?: categoryId
+                                val content = result.data ?: emptyList()
+                                _uiState.update { state ->
+                                    state.copy(
+                                        contentByCategory = mapOf(categoryName to content),
+                                        isLoading = false,
+                                        error = null
+                                    )
+                                }
+                            }
+                            is Resource.Error -> {
+                                _uiState.update { state ->
+                                    state.copy(
+                                        error = result.message,
+                                        isLoading = false
+                                    )
+                                }
+                            }
+                            is Resource.Loading -> {
+                                _uiState.update { state ->
+                                    state.copy(isLoading = true)
+                                }
                             }
                         }
-                        is Resource.Error -> {
-                            _uiState.update { state ->
-                                state.copy(
-                                    error = result.message,
-                                    isLoading = false
-                                )
+                    }
+                } else {
+                    // Carrega todas as categorias
+                    mediaRepository.getAllContentByCategories(mediaType).collect { result ->
+                        when (result) {
+                            is Resource.Success -> {
+                                _uiState.update { state ->
+                                    state.copy(
+                                        contentByCategory = result.data ?: emptyMap(),
+                                        isLoading = false,
+                                        error = null
+                                    )
+                                }
                             }
-                        }
-                        is Resource.Loading -> {
-                            _uiState.update { state ->
-                                state.copy(isLoading = true)
+                            is Resource.Error -> {
+                                _uiState.update { state ->
+                                    state.copy(
+                                        error = result.message,
+                                        isLoading = false
+                                    )
+                                }
+                            }
+                            is Resource.Loading -> {
+                                _uiState.update { state ->
+                                    state.copy(isLoading = true)
+                                }
                             }
                         }
                     }

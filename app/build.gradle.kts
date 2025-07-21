@@ -70,10 +70,8 @@ dependencies {
     // Core Android
     implementation(libs.androidx.core.ktx)
     implementation("androidx.appcompat:appcompat:1.6.1")
-    implementation("com.google.android.material:material:1.10.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
     implementation("androidx.fragment:fragment-ktx:1.6.2")
-    implementation("androidx.recyclerview:recyclerview:1.3.2")
     
     // Compose
     implementation(platform(libs.androidx.compose.bom))
@@ -121,19 +119,15 @@ dependencies {
     // Security
     implementation(libs.security.crypto)
     
-    // Leanback for TV
-    implementation(libs.leanback)
+    // Leanback for TV (comentado - já usando Compose TV)
+    // implementation(libs.leanback)
     
     // Gson
     implementation(libs.gson)
     
-    // QR Code
-    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
-    implementation("com.google.zxing:core:3.5.1")
-    
-    // Glide
-    implementation("com.github.bumptech.glide:glide:4.16.0")
-    annotationProcessor("com.github.bumptech.glide:compiler:4.16.0")
+    // QR Code (comentado - remover se não usado)
+    // implementation("com.journeyapps:zxing-android-embedded:4.3.0")
+    // implementation("com.google.zxing:core:3.5.1")
     
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")

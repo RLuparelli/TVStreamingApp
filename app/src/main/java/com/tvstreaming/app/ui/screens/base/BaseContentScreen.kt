@@ -10,9 +10,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.ui.platform.LocalConfiguration
 import com.tvstreaming.app.ui.components.AnimatedSpaceBackground
 import com.tvstreaming.app.ui.components.content.*
 import com.tvstreaming.app.ui.screens.channels.components.CategoryFilter
+import com.tvstreaming.app.ui.theme.isTelevision
 
 /**
  * Tela base genérica para todos os tipos de conteúdo
@@ -26,9 +29,13 @@ fun BaseContentScreen(
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val configuration = LocalConfiguration.current
+    val isTV = configuration.isTelevision()
     
     Box(
-        modifier = modifier.fillMaxSize()
+        modifier = modifier
+            .fillMaxSize()
+            .then(if (!isTV) Modifier.safeDrawingPadding() else Modifier)
     ) {
         // Background animado
         AnimatedSpaceBackground()

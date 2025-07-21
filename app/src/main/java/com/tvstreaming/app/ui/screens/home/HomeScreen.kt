@@ -18,6 +18,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import com.tvstreaming.app.ui.components.*
 import com.tvstreaming.app.ui.screens.home.components.CategoryRow
 import com.tvstreaming.app.ui.theme.isTelevision
@@ -54,7 +58,7 @@ fun HomeScreen(
         AnimatedContent(
             targetState = uiState,
             transitionSpec = {
-                fadeIn(animationSpec = tween(300)) with
+                fadeIn(animationSpec = tween(300)) togetherWith
                 fadeOut(animationSpec = tween(300))
             },
             label = "HomeScreenContent"
@@ -94,14 +98,17 @@ private fun HomeContent(
     isTV: Boolean
 ) {
     LazyColumn(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .then(if (!isTV) Modifier.safeDrawingPadding() else Modifier),
         verticalArrangement = Arrangement.spacedBy(if (isTV) 32.dp else 24.dp)
     ) {
         // Header
         item {
-            ProfessionalHomeHeader(
+            HomeHeader(
                 userName = "Usuário",
                 onSearchClick = onSearchClick,
+                style = HeaderStyle.PROFESSIONAL,
                 isTV = isTV
             )
         }
@@ -139,9 +146,10 @@ private fun HomeContent(
                 )
             }
             
-            DarkFeaturedCarousel(
+            FeaturedCarousel(
                 featuredItems = featuredItems,
                 onItemClick = { onContentClick(it.id) },
+                style = CarouselStyle.DARK,
                 modifier = Modifier.padding(
                     horizontal = if (isTV) 48.dp else 16.dp
                 ),
@@ -165,7 +173,7 @@ private fun HomeContent(
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
                 
-                val categories = getDarkCategories()
+                val categories = getDefaultCategories()
                 
                 if (isTV) {
                     // TV Layout - Horizontal scrolling with focus
@@ -174,8 +182,9 @@ private fun HomeContent(
                         contentPadding = PaddingValues(vertical = 8.dp)
                     ) {
                         items(categories) { category ->
-                            DarkCategoryCard(
+                            CategoryCard(
                                 category = category,
+                                style = CategoryCardStyle.DARK,
                                 onClick = { 
                                     when (category.id) {
                                         "live_tv" -> onChannelsClick()
@@ -203,8 +212,9 @@ private fun HomeContent(
                             horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
                             rowItems.forEach { category ->
-                                DarkCategoryCard(
+                                CategoryCard(
                                     category = category,
+                                    style = CategoryCardStyle.DARK,
                                     onClick = { 
                                         when (category.id) {
                                             "live_tv" -> onChannelsClick()
